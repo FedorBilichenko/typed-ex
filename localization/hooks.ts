@@ -1,6 +1,5 @@
 import { i18n, TOptions } from "i18next";
 import {
-  Namespace,
   TFunction,
   useTranslation,
   UseTranslationOptions,
@@ -8,37 +7,39 @@ import {
 } from "react-i18next";
 import { NameSpace, TranslationKey } from "./translations";
  
-type TypedNameSpaceOptions = TOptions & { ns?: NameSpace };
-type TypedTranslationOptions = string | TypedNameSpaceOptions | undefined;
+type TypedNameSpaceOptions<N extends NameSpace> = TOptions & { ns?: N };
+type TypedTranslationOptions<N extends NameSpace> = string | TypedNameSpaceOptions<N> | undefined;
 
-type TFunctionParams<N extends Namespace> = Parameters<TFunction<N, undefined>>;
+type TFunctionParams<N extends NameSpace> = Parameters<TFunction<N, undefined>>;
 
-type UseTypedTranslationResponse<N extends Namespace> = {
-  t: (
-    key: TranslationKey,
-    options?: TypedTranslationOptions,
-    defaultValue?: TFunctionParams<N>[1]
-  ) => string;
+type TFunctionType<N extends NameSpace> = (
+  key: TranslationKey<N>,
+  options?: TypedTranslationOptions<N>,
+  defaultValue?: TFunctionParams<N>[1]
+) => string;
+
+type UseTypedTranslationResponse<N extends NameSpace> = {
+  t: TFunctionType<N>;
   i18n: i18n;
   ready: boolean;
 };
 
-export function useTypedTranslation<N extends Namespace>(
+export function useTypedTranslation<N extends NameSpace>(
   ns?: N,
   options?: UseTranslationOptions
 ): UseTypedTranslationResponse<N> {
-  const response: UseTranslationResponse<NameSpace, undefined> = useTranslation(
+  const response: UseTranslationResponse<N, undefined> = useTranslation(
     ns,
     options
   );
 
   function _t(
-    key: TranslationKey,
-    options?: TypedTranslationOptions,
+    key: TranslationKey<N>,
+    options?: Omit<TypedTranslationOptions<N>, 'ns'>,
     defaultValue?: TFunctionParams<N>[1]
   ) {
-    return response.t(key, defaultValue, options);
+    return response.t(key as any, defaultValue, options);
   }
 
-  return { ...response, t: _t };
+  return { ...response, t: _t as TFunctionType<N> };
 }

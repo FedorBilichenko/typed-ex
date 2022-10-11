@@ -48,13 +48,8 @@ function adaptLoadedResources() {
   return _.spread(_.partial(_.merge, {}))(flatResources);
 }
 
-type AllLoadedNameSpaceType = typeof loadedNameSpaces[NameSpace];
-type AllLoadedNameSpaceTypeByLanguage = AllLoadedNameSpaceType[typeof defaultLanguage];
-type UnionToIntersection<U> = (
-  U extends unknown ? (k: U) => void : never
-) extends (k: infer I) => void
-  ? I
-  : never;
+type AllLoadedNameSpaceType<N extends NameSpace> = typeof loadedNameSpaces[N];
+type AllLoadedNameSpaceTypeByLanguage<N extends NameSpace> = AllLoadedNameSpaceType<N>[typeof defaultLanguage];
 
 export type RecursiveKeyOf<TObj extends Record<string, unknown>> = {
   [TKey in keyof TObj & (string | number)]: TObj[TKey] extends unknown[]
@@ -64,18 +59,11 @@ export type RecursiveKeyOf<TObj extends Record<string, unknown>> = {
     : `${TKey}`;
 }[keyof TObj & (string | number)];
 
-type FlattenTypedKey = UnionToIntersection<AllLoadedNameSpaceTypeByLanguage>;
+type FlattenTypedKey<N extends NameSpace> = AllLoadedNameSpaceTypeByLanguage<N>;
 
 // to type translation keys 
-export type TranslationKey = RecursiveKeyOf<FlattenTypedKey>;
+export type TranslationKey<N extends NameSpace> = RecursiveKeyOf<FlattenTypedKey<N>>;
 
 // to init i18next 
 export const resources: I18nResource = adaptLoadedResources();
 export const nameSpaceNames = Object.keys(loadedNameSpaces) as NameSpace[];
-
-// create an instance for nameSpace which contains keys as values, to simplify accessibility to nameSpaces
-// this variable is used everywhere when we need to call a translation from a specific nameSpace
-export const nameSpaces: Record<NameSpace, NameSpace> = nameSpaceNames.reduce(
-  (record, ns) => Object.assign(record, { [ns]: ns }),
-  {} as Record<NameSpace, NameSpace>
-);
